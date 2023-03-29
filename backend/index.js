@@ -1,27 +1,32 @@
+require('dotenv').config();
+
 const express = require("express");
-const app = express();
-const cors = require('cors')
-const port = 3000;
+const mongoose = require("mongoose");
+const cors = require('cors');
 const routeur = require("./routes/route");
 
-app.use(cors());
-app.use(express.json());
-app.use(
-  express.urlencoded({
-    extended: true,
-  })
-);
-app.get("/", (req, res) => {
-  res.json({ message: "ok" });
-});
-app.use("/api", routeur);
+const mongoString = process.env.DATABASE_URL;
 
-app.use((err, req, res, next) => {
-  const statusCode = err.statusCode || 500;
-  console.error(err.message, err.stack);
-  res.status(statusCode).json({ message: err.message });
-  return;
-});
+const app = express();
+const port = 3000
+
+app.use(express.json());
+app.use(cors());
+app.use('/api', routeur)
+
+mongoose.connect(mongoString);
+const database = mongoose.connection
+
+//Connexion à la database
+database.on('error', (error) => {
+    console.log(error)
+})
+
+database.once('connected', () => {
+    console.log('Database Connected');
+})
+
+//Démarrage du serveur
 app.listen(port, () => {
-  console.log(`App listening at http://localhost:${port}`);
-});
+    console.log(`Server started at https://localhost:${port}`)
+})
