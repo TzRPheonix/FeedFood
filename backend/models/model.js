@@ -1,10 +1,10 @@
 const mongoose = require('mongoose');
 
 const dataSchema = new mongoose.Schema({
-    value: {
+    name: {
         required: true,
         type: String
     }
 })
 
-module.exports = mongoose.model('Data', dataSchema)
+module.exports = mongoose.model('userCollection', dataSchema)
