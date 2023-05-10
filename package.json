@@ -1,0 +1,14 @@
+{
+  "dependencies": {
+    "bcrypt": "^5.1.0"
+  },
+  "name": "feedfood",
+  "description": "GitHub du projet. ## Changelog ### BACK-END R.0.0.1 - First push R.0.0.2 - Npm init R.0.0.3 - NPM Install CORS / INIT /EXPRESS R.0.0.4 - Installation de Mongoose R.0.0.5 - Mise en place du getAll R.0.0.6 - Mise en place du post",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}
