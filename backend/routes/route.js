@@ -8,24 +8,30 @@ const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
-//Post Method pour un compte
+// Post Method for registering a new account
 router.post('/register', async (req, res) => {
-    console.log(req.body)
-    notHasedPassword = req.body.password
-    const hashedPassword = await bcrypt.hash(notHasedPassword, 10);
+  const { username, email, password } = req.body;
+  try {
+    const existingUser = await userModel.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: 'Email déjà enregistré.' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = new userModel({
-        username: req.body.username,
-        email: req.body.email,
-        password: hashedPassword
-    })
-    try {
-        const savedUser = await newUser.save();
-        res.status(200).json(savedUser)
-    }
-    catch (error) {
-        res.status(400).json({message: error.message})
-    }
-})
+      username,
+      email,
+      password: hashedPassword
+    });
+
+    const savedUser = await newUser.save();
+    const token = jwt.sign({ userId: savedUser._id }, process.env.JWT_SECRET, { expiresIn: '168h' });
+
+    res.status(200).json({ token });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
 
 //Get all Method
 router.get('/getAll', async (req, res) => {
@@ -44,7 +50,7 @@ router.post('/login', async (req, res) => {
       const user = await userModel.findOne({ email });
   
       if (!user) {
-        return res.status(401).json({ message: 'Utilisateur introuvable.' });
+        return res.status(400).json({ message: 'Utilisateur introuvable.' });
       }
       console.log('user.password:', user.password);
       console.log('password:', password);
@@ -69,7 +75,7 @@ router.post('/reset-password', async (req, res) => {
       const email = req.body.email;
       const user = await userModel.findOne({ email });
       if (!user) {
-          return res.status(404).json({ message: 'User not found' });
+          return res.status(400).json({ message: 'Utilisateur non existant' });
       }
       // Generate a password reset token and store it in the user object
       const token = crypto.randomBytes(20).toString('hex');
@@ -82,7 +88,7 @@ router.post('/reset-password', async (req, res) => {
       await sendEmail(email, 'Password Reset', emailBody); // <-- change this line
       res.status(200).json({ message: 'Password reset email sent' });
   } catch (error) {
-      res.status(500).json({ message: error.message });
+      res.status(400).json({ message: error.message });
   }
 })
 
@@ -92,19 +98,19 @@ router.patch('/reset-password/:token', async (req, res) => {
     const token = req.params.token;
     const user = await userModel.findOne({ resetToken: token, resetTokenExpires: { $gt: Date.now() } });
     if (!user) {
-      return res.status(404).json({ message: 'Invalid or expired token' });
+      return res.status(400).json({ message: 'Token invalide ou expiré.' });
     }
     const { password } = req.body;
     if (!password) {
-      return res.status(400).json({ message: 'Password is required' });
+      return res.status(400).json({ message: 'Mot de passe requis.' });
     }
     user.password = password;
     user.resetToken = undefined;
     user.resetTokenExpires = undefined;
     await user.save();
-    res.status(200).json({ message: 'Password reset successful' });
+    res.status(200).json({ message: 'Mot de passe changé.' });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(400).json({ message: error.message });
   }
 });
 
@@ -122,7 +128,7 @@ router.post('/addPost', async (req, res) => {
     const user = await userModel.findById(req.body.createdBy);
     if (!user) {
       // If user not found, return an error response
-      return res.status(400).json({ message: 'Invalid user id' });
+      return res.status(400).json({ message: 'Iduser invalide.' });
     }
 
     // Create a new post document
@@ -148,7 +154,7 @@ router.get('/posts', async (req, res) => {
     const posts = await postModel.find().populate('createdBy', 'username').exec();
     res.json(posts);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(400).json({ message: err.message });
   }
 });
 
@@ -158,7 +164,7 @@ router.get('/userpost/:id', async (req, res) => {
   try {
     const posts = await postModel.find({ createdBy: req.params.id }).populate('createdBy', 'username').exec();
     if (!posts || posts.length === 0) {
-      return res.status(404).json({ message: 'No posts found for this user' });
+      return res.status(400).json({ message: 'Pas de post pour cette utilisateur.' });
     }
     res.json(posts.map(post => ({
       _id: post._id,
@@ -168,7 +174,7 @@ router.get('/userpost/:id', async (req, res) => {
       username: post.createdBy.username
     })));
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(400).json({ message: err.message });
   }
 });
 
