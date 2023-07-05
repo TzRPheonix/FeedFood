@@ -33,7 +33,7 @@ router.post('/register', async (req, res) => {
   }
 });
 
-//Get all Method
+// Get all method for account
 router.get('/getAll', async (req, res) => {
     try {
         const data = await userModel.find();
@@ -44,6 +44,7 @@ router.get('/getAll', async (req, res) => {
     }
 })
 
+// Post method for user login
 router.post('/login', async (req, res) => {
     const { email, password } = req.body;
     try {
@@ -60,14 +61,12 @@ router.post('/login', async (req, res) => {
         const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '168h' });
         return res.status(200).json({ message: 'Authentification réussie.', token});
       } else {
-        return res.status(401).json({ message: 'Authentification échouée.' });
+        return res.status(400).json({ message: 'Authentification échouée.' });
       }
     } catch (error) {
-      return res.status(500).json({ message: error.message });
+      return res.status(400).json({ message: error.message });
     }
 });
-  
-  
   
 //Password Reset Request Method
 router.post('/reset-password', async (req, res) => {
@@ -84,9 +83,9 @@ router.post('/reset-password', async (req, res) => {
       await user.save();
       // Send the password reset email with the reset link
       const resetLink = `https://example.com/reset-password/${token}`;
-      const emailBody = `Click on this link to reset your password: ${resetLink}`;
-      await sendEmail(email, 'Password Reset', emailBody); // <-- change this line
-      res.status(200).json({ message: 'Password reset email sent' });
+      const emailBody = `Cliquer sur ce lien pour réinitialiser votre mot de passe : <a href="${resetLink}">${resetLink}</a><br><br>Si vous n'êtes pas à l'origine de ce changement, modifier immédiatement votre mot de passe.`;
+      await sendEmail(email, 'Modification de votre mot de passe.', emailBody);
+      res.status(200).json({ message: 'Lien de réinitialisation envoyé.' });
   } catch (error) {
       res.status(400).json({ message: error.message });
   }
@@ -114,13 +113,7 @@ router.patch('/reset-password/:token', async (req, res) => {
   }
 });
 
-
-//Delete by ID Method
-router.delete('/delete/:id', (req, res) => {
-    res.send('Delete by ID API')
-})
-
-//Créer un post
+// Post method to add a post
 router.post('/addPost', async (req, res) => {
   console.log(req.body)
   try {
@@ -148,7 +141,7 @@ router.post('/addPost', async (req, res) => {
   }
 });
 
-//Methode avoir tous les post
+// Get all method for all posts
 router.get('/posts', async (req, res) => {
   try {
     const posts = await postModel.find().populate('createdBy', 'username').exec();
@@ -159,7 +152,7 @@ router.get('/posts', async (req, res) => {
 });
 
 
-//Methode avoir les posts d'un utilisateur avec son id
+// Get method for specific user post using userID
 router.get('/userpost/:id', async (req, res) => {
   try {
     const posts = await postModel.find({ createdBy: req.params.id }).populate('createdBy', 'username').exec();
